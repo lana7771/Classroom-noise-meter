@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Noise Meter PRO</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 30px; transition: 0.3s; background: #f9f9f9; }
+#emoji { font-size: 130px; margin-top: 20px; text-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
+#status { font-size: 32px; font-weight: bold; margin: 15px; min-height: 40px; }
+#score { font-size: 24px; color: #666; margin-bottom: 20px; }
+.controls { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+button { padding: 15px 30px; border-radius: 50px; border: none; cursor: pointer; font-size: 20px; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+button:active { transform: translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.good { background: #4CAF50; color: white; }
+.warn { background: #FFC107; color: #333; }
+.bad { background: #F44336; color: white; }
+</style>
+</head>
+<body>
+
+<h1>🔔 Classroom Noise Meter</h1>
+
+<div id="emoji">😐</div>
+<div id="status">Ready?</div>
+<div id="score">Points: 0</div>
+
+<div class="controls">
+<button class="good" onclick="setState('good')">😊 Quiet</button>
+<button class="warn" onclick="setState('warn')">😐 Warning</button>
+<button class="bad" onclick="setState('bad')">😡 BE QUIET!</button>
+</div>
+
+<audio id="serviceBell" preload="auto">
+  <source src="https://gfxsounds.com/wp-content/uploads/2022/07/Hotel-desk-bell-ringing-soft-gentle.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+let score = 0;
+let lastSpoken = 0;
+
+function speak(text) {
+  const now = Date.now();
+  if (now - lastSpoken < 1500) return;
+  
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "en-US";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(msg);
+  lastSpoken = now;
+}
+
+function playBell() {
+  const bell = document.getElementById("serviceBell");
+  bell.pause();
+  bell.currentTime = 0; // Сброс на начало, чтобы можно было "дзинькать" часто
+  
+  const playPromise = bell.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(e => console.log("Нужен клик для активации звука"));
+  }
+}
+
+function setState(state) {
+  const emoji = document.getElementById("emoji");
+  const status = document.getElementById("status");
+
+  if (state === 'good') {
+    emoji.textContent = "😊";
+    status.textContent = "Great job!";
+    document.body.style.background = "#e8f5e9";
+    speak("Excellent");
+    score += 2;
+  }
+
+  if (state === 'warn') {
+    emoji.textContent = "😐";
+    status.textContent = "Please, be quiet";
+    document.body.style.background = "#fffde7";
+    speak("Quiet please");
+    score += 1;
+  }
+
+  if (state === 'bad') {
+    emoji.textContent = "😡";
+    status.textContent = "BE QUIET NOW!";
+    document.body.style.background = "#ffebee";
+
+    // Сначала резкий ДЗИНЬ
+    playBell();
+    
+    // С небольшой задержкой строгий голос
+    setTimeout(() => {
+        speak("Be quiet immediately!");
+    }, 300);
+    
+    score -= 2;
+  }
+
+  document.getElementById("score").innerText = "Points: " + score;
+}
+</script>
+
+</body>
+</html>
